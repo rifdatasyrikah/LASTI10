@@ -17,11 +17,11 @@ class Requester(Base):
     id_requester=Column(Integer,primary_key=True,index=True)
     password=Column(String)
     nama=Column(String)
-    NIP=Column(Integer)
-    instansi=Column(String,ForeignKey("Instansi.id_instansi"))
+    NIK=Column(Integer)
+    # instansi=Column(String,ForeignKey("Instansi.id_instansi"))
 
     #one-to-one relationship dengan instansi
-    instansi_column=relationship("Instansi",back_populates="requester")
+    # instansi_column=relationship("Instansi",back_populates="requester")
 
     #one-to-one relationship dengan req_penggunaan_API
     req_penggunaan_2=relationship("Req_penggunaan_API",back_populates="requester2")
@@ -35,18 +35,22 @@ class Provider(Base):
     nama=Column(String)
     NIP=Column(Integer)
     instansi=Column(String,ForeignKey("Instansi.id_instansi"))
+
     #one-to-one relationship dengan instansi
-    instansi_column_2=relationship("Instansi",back_populates="provider")
+    instansi_column=relationship("Instansi",back_populates="provider")
     #one-to-one relationship dengan API
     API4=relationship("API",back_populates="provider",uselist=False)
 
 class Publisher(Base):
     __tablename__="Publisher"
-    id_requester=Column(Integer,primary_key=True,index=True)
-    id_publisher=Column(Integer,)
+    id_publisher=Column(Integer,primary_key=True,index=True)
     password=Column(String)
     nama=Column(String)
+    NIP=Column(Integer)
+    instansi=Column(String,ForeignKey("Instansi.id_instansi"))
 
+    #one-to-one relationship dengan instansi
+    instansi_column_2=relationship("Instansi",back_populates="publisher")
     #one-to-one relationship dengan req_publikasi_API
     req_publikasi=relationship("Req_publikasi_API",back_populates="publisher",uselist=False)
 
@@ -56,7 +60,7 @@ class Req_publikasi_API(Base):
     id_req_publikasi_API=Column(Integer,primary_key=True,index=True)
     id_publisher=Column(Integer,ForeignKey("Publisher.id_publisher"))
     id_api=Column(Integer,ForeignKey("API.id_api"))
-    status_akses=Column(String)
+    status_akses=Column(Boolean, default = False)
     #one-to-one relationship dengan publisher
     publisher=relationship("Publisher",back_populates="req_publikasi")
     #one-to-one relationship dengan API
@@ -71,7 +75,7 @@ class API(Base):
     keterangan=Column(String)
     alamat_akses=Column(String)
     file_adapter=Column(String)
-    is_published=Column(String)
+    is_published=Column(Boolean, default = False)
     #one-to-one relationship dengan request_publikasi_api
     req_publikasi2=relationship("Request_publikasi_API",back_populates="API",uselist=False)
     #one-to-one relationship dengan request_penggunaan_api
@@ -93,7 +97,7 @@ class Req_penggunaan_API(Base):
     id_req_penggunaan_API=Column(Integer,primary_key=True,index=True)
     id_requester=Column(Integer,ForeignKey("Requester.id_requester"))
     id_api=Column(Integer,ForeignKey("API.id_api"))
-    status_akses=Column(String)
+    status_akses=Column(Boolean, default = False)
 
     #one-to-one relationship dengan API
     API2=relationship("API",back_populates="req_penggunaan")
@@ -107,7 +111,7 @@ class Req_penyediaan_API(Base):
     id_requester=Column(Integer,ForeignKey("Requester.id_requester"))
     nama_api=Column(String)
     spesifikasi=Column(String)
-    status_konfirmasi=Column(String)
+    status_konfirmasi=Column(Boolean, default = False)
 
     #one-to-one relationship dengan requester
     requester3=relationship("Requester",back_populates="req_penyediaan")
