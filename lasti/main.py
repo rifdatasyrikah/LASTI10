@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Depends
 import models
 from database import engine, get_db
 from logging import Handler
 
+from sqlalchemy import orm
+from sqlalchemy.orm import Session
+
 import uvicorn
-import schemas as sc
+import schemas
 
 app=FastAPI()
 
@@ -54,15 +57,33 @@ def publish_api():
 def get_api():
         pass
 
-@app.post("{id_requester}/request/penyediaan_API")
+@app.post("{id_requester}/request/penyediaan_API", response_model=schemas.Req_penyediaan_API)
 # menambahkan data req_penyediaan_API sesuai dengan id requester
-def add_request_penyediaan_api():
-        pass
+def add_request_penyediaan_api(
+        id_requester: int,
+        Req_penyediaan_API: schemas.Req_penyediaan_API,
+        db: orm.Session = Depends(get_db)
+):
+        db_requester = db.query(models.Requester).filter(models.Requester.id_requester == id_requester).first()
+        if db_requester is None:
+                raise HTTPException(status_code=404, detail="this requester account does not exist")
+        Req_penyediaan_API = models.Req_penyediaan_API(**Req_penyediaan_API.dict(), requseter = id_requester)
+        db.add(Req_penyediaan_API)
+        db.commit()
+        db.refresh(Req_penyediaan_API)
+        return Req_penyediaan_API
 
-@app.put("/konfirmasi/penyediaan_API/{id_req_penyediaan_API}")
+@app.put("/konfirmasi/penyediaan_API/{id_req_penyediaan_API}", response_model=schemas.Req_penyediaan_API)
 # mengubah kolom status_konfirmasi pada tabel req_penyediaan_API jadi true
-def konfirmasi_request_penyediaan_api():
-        pass
+def konfirmasi_request_penyediaan_api(
+        id_req_penyediaan_API: int,
+        db: orm.Session = Depends(get_db)
+):
+        db_req = db.query(models.Req_penyediaan_API).filter(models.Req_penyediaan_API.id_req_penyediaan_API == id_req_penyediaan_API).first()
+        db_req.status_konfirmasi = True
+        db.commit()
+        db.refresh(db_req)
+        return db_req
 
 @app.post("{id_requester}/request/penggunaan_API")
 # menambahkan data req_penggunaan_API sesuai dengan id requester
