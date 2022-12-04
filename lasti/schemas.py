@@ -112,3 +112,7 @@ class Req_penyediaan_API(BaseModel):
     # requester3=relationship("Requester",back_populates="req_penyediaan")
 
 
+#buat login
+class Login(BaseModel):
+    nama:str
+    password:str

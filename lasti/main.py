@@ -1,18 +1,20 @@
 from fastapi import FastAPI, HTTPException, Depends
-import models
+import models,database
 from database import engine, get_db
 from logging import Handler
+from fastapi.security import OAuth2PasswordRequestForm
+from passlib import CryptContext
 
 from sqlalchemy import orm
 from sqlalchemy.orm import Session
 
 import uvicorn
 import schemas
+import hashing
 
 app=FastAPI()
 
 models.Base.metadata.create_all(engine)
-
 
 
 
@@ -23,13 +25,20 @@ def welcome():
 
 @app.post("/register")
 # registrasi akun requester
-def register():
-        pass
+def register(request:schemas.Requester,db:Session=Depends(get_db)):
+        new_requester=models.Requester(password=hashing.Hash.bcrypt(request.password),nama=request.nama,NIK=request.NIK)
+        db.add(new_requester)
+        db.commit()
+        db.refresh(new_requester)
+        return new_requester
 
-@app.get("/login")
+@app.post("/login")
 # melakukan login sesuai dengan akun requester
-def login():
-        pass
+def login(request:schemas.Login,db:Session=Depends(database.get_db())):
+        requester=db.query(models.Requester).filter(models.Requester.nama==request.nama).first()
+        if hashing.Hash.verify(requester.password,request.password):
+                print("password salah")
+        return requester
 
 @app.get("/API")
 # mengambil seluruh data api
