@@ -104,5 +104,33 @@ def add_request_penggunaan_api():
 def konfirmasi_request_penggunaan_api():
         pass
 
+@app.post("{id_requester}/request/publikasi_API", response_model=schemas.Req_publikasi_API, tags=["Publisher"])
+# menambahkan data req_publikasi_API sesuai dengan id requester
+def add_request_publikasi_api(
+        id_publisher: int,
+        Req_publikasi_API: schemas.Req_publikasi_API,
+        db: orm.Session = Depends(get_db)
+):
+        db_publisher = db.query(models.Publisher).filter(models.Publisher.id_publisher == id_publisher).first()
+        if db_publisher is None:
+                raise HTTPException(status_code=404, detail="this publisher account does not exist")
+        Req_publikasi_API = models.Req_publikasi_API(**Req_publikasi_API.dict(), requseter = id_publisher)
+        db.add(Req_publikasi_API)
+        db.commit()
+        db.refresh(Req_publikasi_API)
+        return Req_publikasi_API
+
+@app.put("/konfirmasi/publikasi_API/{id_req_publikasi_API}", response_model=schemas.Req_publikasi_API, tags=["Provider"])
+# mengubah kolom status_akses pada tabel req_publikasi_API jadi true
+def konfirmasi_request_publikasi_api(
+        id_req_publikasi_API: int,
+        db: orm.Session = Depends(get_db)
+):
+        db_req = db.query(models.Req_publikasi_API).filter(models.Req_publikasi_API.id_req_publikasi_API == id_req_publikasi_API).first()
+        db_req.status_akses = True
+        db.commit()
+        db.refresh(db_req)
+        return db_req
+
 if __name__ == '__main__':
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
