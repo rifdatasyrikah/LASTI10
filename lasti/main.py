@@ -42,18 +42,28 @@ def login(request:schemas.Login,db:Session=Depends(database.get_db)):
 
 @app.get("/API", tags=["Publisher","Provider"])
 # mengambil seluruh data api
-def get_all_api():
-        pass
+def get_all_api(db: orm.Session = Depends(get_db)):
+        db_api = db.query(models.API)
+        if db_api is None :
+                raise HTTPException(status_code = 404, detail = "API didn't exist")
+        return db_api
 
 @app.get("/API/katalog", tags=["Requester"])
 # mengambil seluruh data api yang sudah dipublikasi (is_published == true)
-def get_published_api():
-        pass
+def get_published_api(db: orm.Session = Depends(get_db)):
+        db_api = db.query(models.API).filter(models.API.is_published==True)
+        if db_api is None :
+                raise HTTPException(status_code = 404, detail = "API didn't exist")
+        return db_api
 
 @app.post("/API", tags=["Provider"])
 # menambahkan data API baru ke database
-def add_api():
-        pass
+def add_api(new_api:schemas.API,db:Session=Depends(get_db)):
+        new_api = models.API(**new_api.dict())
+        db.add(new_api)
+        db.commit()
+        db.refresh(new_api)
+        return new_api
 
 @app.put("/API/publish/{id_api}", tags=["Publisher"])
 # mempublikasikan api dengan mengubah kolom is_published pada salah satu data pada tabel API dengan id_api=id_api
