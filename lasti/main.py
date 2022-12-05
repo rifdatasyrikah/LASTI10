@@ -55,7 +55,7 @@ def get_published_api():
 def add_api():
         pass
 
-@app.put("/API/publish/{id_api}", response_model = schemas.API, tags=["Publisher"])
+@app.put("/API/publish/{id_api}", tags=["Publisher"])
 # mempublikasikan api dengan mengubah kolom is_published pada salah satu data pada tabel API dengan id_api=id_api
 def publish_api(id_api: int, db: orm.Session = Depends(get_db)):
         db_api = db.query(models.API).filter(models.API.id_api == id_api).first()
@@ -64,7 +64,7 @@ def publish_api(id_api: int, db: orm.Session = Depends(get_db)):
         db.refresh(db_api)
         return db_api
 
-@app.get("/API/{id_api}", response_model = schemas.API , tags=["Requester"])
+@app.get("/API/{id_api}", tags=["Requester"])
 # mengambil data API yang sudah diberikan aksesnya 
 # (dicek pada tabel req_penggunaan_api untuk kolom status_akses == true)
 def get_api_by_id(id_api: int, id_requester: int, db: orm.Session = Depends(get_db)):
@@ -83,7 +83,7 @@ def get_api(id_requester: int, db: orm.Session = Depends(get_db)):
                 raise HTTPException(status_code = 403, detail = "This requester doesn't have access to any API")
         db_api = db.query(models.API).filter(models.API.id_api.in_(db_akses))
         return db_api
-        
+
 @app.post("{id_requester}/request/penyediaan_API", response_model=schemas.Req_penyediaan_API, tags=["Requester"])
 # menambahkan data req_penyediaan_API sesuai dengan id requester
 def add_request_penyediaan_api(
@@ -94,7 +94,7 @@ def add_request_penyediaan_api(
         db_requester = db.query(models.Requester).filter(models.Requester.id_requester == id_requester).first()
         if db_requester is None:
                 raise HTTPException(status_code=404, detail="this requester account does not exist")
-        Req_penyediaan_API = models.Req_penyediaan_API(**Req_penyediaan_API.dict(), requseter = id_requester)
+        Req_penyediaan_API = models.Req_penyediaan_API(**Req_penyediaan_API.dict(), requester = id_requester)
         db.add(Req_penyediaan_API)
         db.commit()
         db.refresh(Req_penyediaan_API)
@@ -114,13 +114,31 @@ def konfirmasi_request_penyediaan_api(
 
 @app.post("{id_requester}/request/penggunaan_API", tags=["Requester"])
 # menambahkan data req_penggunaan_API sesuai dengan id requester
-def add_request_penggunaan_api():
-        pass
+def add_request_penggunaan_api(
+        id_requester: int,
+        Req_penggunaan_API: schemas.Req_penggunaan_API,
+        db: orm.Session = Depends(get_db)
+):
+        db_requester = db.query(models.Requester).filter(models.Requester.id_requester == id_requester).first() 
+        if db_requester is None:
+                raise HTTPException(status_code=404, detail="this requester account does not exist")
+        Req_penggunaan_API = models.Req_penggunaan_API(**Req_penggunaan_API.dict(), requester = id_requester)
+        db.add(Req_penggunaan_API)
+        db.commit()
+        db.refresh(Req_penggunaan_API)
+        return Req_penggunaan_API
 
 @app.put("/konfimasi/request/penggunaan_API/{id_req_penggunaan_API}", tags=["Publisher"])
 # mengubah kolom status_akses pada tabel req_penggunaan_API jadi true
-def konfirmasi_request_penggunaan_api():
-        pass
+def konfirmasi_request_penggunaan_api(
+        id_req_penggunaan_API: int,
+        db: orm.Session = Depends(get_db)
+):
+        db_req = db.query(models.Req_penggunaan_API).filter(models.Req_penggunaan_API.id_req_penggunaan_API == id_req_penggunaan_API).first()
+        db_req.status_akses = True
+        db.commit()
+        db.refresh(db_req)
+        return db_req
 
 @app.post("{id_requester}/request/publikasi_API", response_model=schemas.Req_publikasi_API, tags=["Publisher"])
 # menambahkan data req_publikasi_API sesuai dengan id requester
@@ -132,7 +150,7 @@ def add_request_publikasi_api(
         db_publisher = db.query(models.Publisher).filter(models.Publisher.id_publisher == id_publisher).first()
         if db_publisher is None:
                 raise HTTPException(status_code=404, detail="this publisher account does not exist")
-        Req_publikasi_API = models.Req_publikasi_API(**Req_publikasi_API.dict(), requseter = id_publisher)
+        Req_publikasi_API = models.Req_publikasi_API(**Req_publikasi_API.dict(), requester = id_publisher)
         db.add(Req_publikasi_API)
         db.commit()
         db.refresh(Req_publikasi_API)
