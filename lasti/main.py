@@ -55,17 +55,35 @@ def get_published_api():
 def add_api():
         pass
 
-@app.put("/API/publish/{id_api}", tags=["Publisher"])
+@app.put("/API/publish/{id_api}", response_model = schemas.API, tags=["Publisher"])
 # mempublikasikan api dengan mengubah kolom is_published pada salah satu data pada tabel API dengan id_api=id_api
-def publish_api():
-        pass
+def publish_api(id_api: int, db: orm.Session = Depends(get_db)):
+        db_api = db.query(models.API).filter(models.API.id_api == id_api).first()
+        db_api.is_published = True
+        db.commit()
+        db.refresh(db_api)
+        return db_api
 
-@app.get("/API/{id_api}", tags=["Requester"])
+@app.get("/API/{id_api}", response_model = schemas.API , tags=["Requester"])
 # mengambil data API yang sudah diberikan aksesnya 
 # (dicek pada tabel req_penggunaan_api untuk kolom status_akses == true)
-def get_api():
-        pass
+def get_api_by_id(id_api: int, id_requester: int, db: orm.Session = Depends(get_db)):
+        db_akses = db.query(models.Req_penggunaan_API).filter(models.Req_penggunaan_API.id_api == id_api, models.Req_penggunaan_API.id_requester == id_requester, models.Req_penggunaan_API.status_akses == True).first()
+        if db_akses is None :
+                raise HTTPException(status_code = 403, detail = "This requester doesn't have accesss to this API")
+        db_api = db.query(models.API).filter(models.API.id_api == id_api)
+        return db_api
 
+@app.get("/API/{id_requester}/all", response_model = schemas.API, tags=["Requester"])
+# mengambil semua data API yang sudah diberikan aksesnya untuk requester dengan id_requester == id_requester
+# (dicek pada tabel req_penggunaan_api untuk kolom status_akses == true)
+def get_api(id_requester: int, db: orm.Session = Depends(get_db)):
+        db_akses = db.query(models.Req_penggunaan_API.id_api).filter(models.Req_penggunaan_API.id_requester == id_requester, models.Req_penggunaan_API.status_akses == True).all()
+        if not db_akses :
+                raise HTTPException(status_code = 403, detail = "This requester doesn't have access to any API")
+        db_api = db.query(models.API).filter(models.API.id_api.in_(db_akses))
+        return db_api
+        
 @app.post("{id_requester}/request/penyediaan_API", response_model=schemas.Req_penyediaan_API, tags=["Requester"])
 # menambahkan data req_penyediaan_API sesuai dengan id requester
 def add_request_penyediaan_api(
