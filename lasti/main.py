@@ -112,7 +112,7 @@ def konfirmasi_request_penyediaan_api(
         db.refresh(db_req)
         return db_req
 
-@app.post("{id_requester}/request/penggunaan_API", tags=["Requester"])
+@app.post("{id_requester}/request/penggunaan_API", response_model=schemas.Req_penggunaan_API, tags=["Requester"])
 # menambahkan data req_penggunaan_API sesuai dengan id requester
 def add_request_penggunaan_api(
         id_requester: int,
