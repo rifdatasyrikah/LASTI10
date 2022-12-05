@@ -3,7 +3,7 @@ import models,database
 from database import engine, get_db
 from logging import Handler
 from fastapi.security import OAuth2PasswordRequestForm
-from passlib import CryptContext
+from passlib.context import CryptContext
 
 from sqlalchemy import orm
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ models.Base.metadata.create_all(engine)
 def welcome():
         return {"message": "Selamat datang di aplikasi MANTRA"}
 
-@app.post("/register")
+@app.post("/register", tags=["Requester Account Management"])
 # registrasi akun requester
 def register(request:schemas.Requester,db:Session=Depends(get_db)):
         new_requester=models.Requester(password=hashing.Hash.bcrypt(request.password),nama=request.nama,NIK=request.NIK)
@@ -32,41 +32,41 @@ def register(request:schemas.Requester,db:Session=Depends(get_db)):
         db.refresh(new_requester)
         return new_requester
 
-@app.post("/login")
+@app.post("/login", tags=["Requester Account Management"])
 # melakukan login sesuai dengan akun requester
-def login(request:schemas.Login,db:Session=Depends(database.get_db())):
+def login(request:schemas.Login,db:Session=Depends(database.get_db)):
         requester=db.query(models.Requester).filter(models.Requester.nama==request.nama).first()
         if hashing.Hash.verify(requester.password,request.password):
                 print("password salah")
         return requester
 
-@app.get("/API")
+@app.get("/API", tags=["Publisher","Provider"])
 # mengambil seluruh data api
 def get_all_api():
         pass
 
-@app.get("/API/katalog")
+@app.get("/API/katalog", tags=["Requester"])
 # mengambil seluruh data api yang sudah dipublikasi (is_published == true)
 def get_published_api():
         pass
 
-@app.post("/API")
+@app.post("/API", tags=["Provider"])
 # menambahkan data API baru ke database
 def add_api():
         pass
 
-@app.put("/API/publish/{id_api}")
+@app.put("/API/publish/{id_api}", tags=["Publisher"])
 # mempublikasikan api dengan mengubah kolom is_published pada salah satu data pada tabel API dengan id_api=id_api
 def publish_api():
         pass
 
-@app.get("/API/{id_api}")
+@app.get("/API/{id_api}", tags=["Requester"])
 # mengambil data API yang sudah diberikan aksesnya 
 # (dicek pada tabel req_penggunaan_api untuk kolom status_akses == true)
 def get_api():
         pass
 
-@app.post("{id_requester}/request/penyediaan_API", response_model=schemas.Req_penyediaan_API)
+@app.post("{id_requester}/request/penyediaan_API", response_model=schemas.Req_penyediaan_API, tags=["Requester"])
 # menambahkan data req_penyediaan_API sesuai dengan id requester
 def add_request_penyediaan_api(
         id_requester: int,
@@ -82,7 +82,7 @@ def add_request_penyediaan_api(
         db.refresh(Req_penyediaan_API)
         return Req_penyediaan_API
 
-@app.put("/konfirmasi/penyediaan_API/{id_req_penyediaan_API}", response_model=schemas.Req_penyediaan_API)
+@app.put("/konfirmasi/penyediaan_API/{id_req_penyediaan_API}", response_model=schemas.Req_penyediaan_API, tags=["Provider"])
 # mengubah kolom status_konfirmasi pada tabel req_penyediaan_API jadi true
 def konfirmasi_request_penyediaan_api(
         id_req_penyediaan_API: int,
@@ -94,12 +94,12 @@ def konfirmasi_request_penyediaan_api(
         db.refresh(db_req)
         return db_req
 
-@app.post("{id_requester}/request/penggunaan_API")
+@app.post("{id_requester}/request/penggunaan_API", tags=["Requester"])
 # menambahkan data req_penggunaan_API sesuai dengan id requester
 def add_request_penggunaan_api():
         pass
 
-@app.put("/konfimasi/request/penggunaan_API/{id_req_penggunaan_API}")
+@app.put("/konfimasi/request/penggunaan_API/{id_req_penggunaan_API}", tags=["Publisher"])
 # mengubah kolom status_akses pada tabel req_penggunaan_API jadi true
 def konfirmasi_request_penggunaan_api():
         pass
